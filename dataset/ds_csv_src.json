@@ -7,20 +7,16 @@
 		},
 		"parameters": {
 			"container": {
-				"type": "String"
+				"type": "string"
 			},
 			"folder": {
-				"type": "String"
+				"type": "string"
 			},
 			"file": {
-				"type": "String"
+				"type": "string"
 			}
 		},
-		"annotations": [
-			"container",
-			"folder",
-			"string"
-		],
+		"annotations": [],
 		"type": "DelimitedText",
 		"typeProperties": {
 			"location": {

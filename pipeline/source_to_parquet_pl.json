@@ -33,26 +33,73 @@
 							"type": "ParquetWriteSettings"
 						}
 					},
-					"enableStaging": false
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "License Issue Date"
+								},
+								"sink": {
+									"name": "license_issue_date"
+								}
+							},
+							{
+								"source": {
+									"name": "License Number"
+								},
+								"sink": {
+									"name": "license_number"
+								}
+							},
+							{
+								"source": {
+									"name": "Animal's Name"
+								},
+								"sink": {
+									"name": "animal_name"
+								}
+							},
+							{
+								"source": {
+									"name": "Species"
+								},
+								"sink": {
+									"name": "species"
+								}
+							},
+							{
+								"source": {
+									"name": "Primary Breed"
+								},
+								"sink": {
+									"name": "primary_breed"
+								}
+							},
+							{
+								"source": {
+									"name": "Secondary Breed"
+								},
+								"sink": {
+									"name": "secondary_breed"
+								}
+							},
+							{
+								"source": {
+									"name": "ZIP Code"
+								},
+								"sink": {
+									"name": "zip_code"
+								}
+							}
+						]
+					}
 				},
 				"inputs": [
 					{
 						"referenceName": "ds_csv_src",
-						"type": "DatasetReference",
-						"parameters": {
-							"container": {
-								"value": "@pipeline().parameters.src_container",
-								"type": "Expression"
-							},
-							"folder": {
-								"value": "@pipeline().parameters.src_folder",
-								"type": "Expression"
-							},
-							"file": {
-								"value": "@pipeline().parameters.src_file",
-								"type": "Expression"
-							}
-						}
+						"type": "DatasetReference"
 					}
 				],
 				"outputs": [

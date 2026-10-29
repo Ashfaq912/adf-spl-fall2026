@@ -1,0 +1,88 @@
+{
+	"name": "source_to_parquet_pl",
+	"properties": {
+		"activities": [
+			{
+				"name": "copy_csv_to_parquet",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_csv_src",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_parquet_tgt",
+						"type": "DatasetReference",
+						"parameters": {
+							"container": {
+								"value": "@pipeline().parameters.tgt_container",
+								"type": "Expression"
+							},
+							"folder": {
+								"value": "@pipeline().parameters.tgt_folder",
+								"type": "Expression"
+							},
+							"file": {
+								"value": "@pipeline().parameters.tgt_file",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"src_container": {
+				"type": "string"
+			},
+			"src_folder": {
+				"type": "string"
+			},
+			"src_file": {
+				"type": "string"
+			},
+			"tgt_container": {
+				"type": "string"
+			},
+			"tgt_folder": {
+				"type": "string"
+			},
+			"tgt_file": {
+				"type": "string"
+			}
+		},
+		"annotations": []
+	}
+}

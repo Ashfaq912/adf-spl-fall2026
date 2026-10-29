@@ -1,0 +1,127 @@
+{
+	"name": "spl_master_pl",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Metadata1",
+				"type": "GetMetadata",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"policy": {
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_src_folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"container": "source-files",
+							"folder": "spl"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach_files",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.files_list",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "set_file_name",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_file_name",
+								"value": {
+									"value": "@item()",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "run_child",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "set_file_name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "source_to_parquet_pl",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"src_container": "source-files",
+									"src_folder": "spl",
+									"src_file": {
+										"value": "@variables('v_file_name')",
+										"type": "Expression"
+									},
+									"tgt_container": "output",
+									"tgt_folder": "spl",
+									"tgt_file": {
+										"value": "@concat('spl_fall2026_', utcnow())",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"files_list": {
+				"type": "array",
+				"defaultValue": [
+					"Seattle_Pet_Licenses_20260915.csv",
+					"Seattle_Pet_Licenses_20261001.csv",
+					"Seattle_Pet_Licenses_20261015.csv"
+				]
+			}
+		},
+		"variables": {
+			"v_file_name": {
+				"type": "String"
+			}
+		},
+		"annotations": []
+	}
+}

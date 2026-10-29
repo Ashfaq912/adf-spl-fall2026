@@ -5,8 +5,6 @@
 			{
 				"name": "Get Metadata1",
 				"type": "GetMetadata",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [],
 				"policy": {
 					"retry": 0,
@@ -20,8 +18,14 @@
 						"referenceName": "ds_src_folder",
 						"type": "DatasetReference",
 						"parameters": {
-							"container": "source-files",
-							"folder": "spl"
+							"container": {
+								"value": "@pipeline().parameters.src_container",
+								"type": "Expression"
+							},
+							"folder": {
+								"value": "@pipeline().parameters.src_folder",
+								"type": "Expression"
+							}
 						}
 					},
 					"fieldList": [
@@ -38,13 +42,43 @@
 				}
 			},
 			{
-				"name": "ForEach_files",
-				"type": "ForEach",
-				"dependsOn": [],
+				"name": "filter_csv",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@pipeline().parameters.files_list",
+						"value": "@activity('Get Metadata1').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@endswith(item().name, '.csv')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach_files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "filter_csv",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('filter_csv').output.Value",
 						"type": "Expression"
 					},
 					"isSequential": true,
@@ -61,7 +95,31 @@
 							"typeProperties": {
 								"variableName": "v_file_name",
 								"value": {
-									"value": "@item()",
+									"value": "@item().name",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "set_file_date",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "set_file_name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_file_date",
+								"value": {
+									"value": "@split(replace(variables('v_file_name'), '.csv', ''), '_')[3]",
 									"type": "Expression"
 								}
 							}
@@ -71,7 +129,7 @@
 							"type": "ExecutePipeline",
 							"dependsOn": [
 								{
-									"activity": "set_file_name",
+									"activity": "set_file_date",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -88,16 +146,28 @@
 								},
 								"waitOnCompletion": true,
 								"parameters": {
-									"src_container": "source-files",
-									"src_folder": "spl",
+									"src_container": {
+										"value": "@pipeline().parameters.src_container",
+										"type": "Expression"
+									},
+									"src_folder": {
+										"value": "@pipeline().parameters.src_folder",
+										"type": "Expression"
+									},
 									"src_file": {
 										"value": "@variables('v_file_name')",
 										"type": "Expression"
 									},
-									"tgt_container": "output",
-									"tgt_folder": "spl",
+									"tgt_container": {
+										"value": "@pipeline().parameters.tgt_container",
+										"type": "Expression"
+									},
+									"tgt_folder": {
+										"value": "@pipeline().parameters.tgt_folder",
+										"type": "Expression"
+									},
 									"tgt_file": {
-										"value": "@concat('spl_fall2026_', utcnow())",
+										"value": "@concat(pipeline().parameters.file_prefix, '_', substring(variables('v_file_date'),0,4), '_', substring(variables('v_file_date'),4,2), '_', substring(variables('v_file_date'),6,2), '.parquet')",
 										"type": "Expression"
 									}
 								}
@@ -108,6 +178,26 @@
 			}
 		],
 		"parameters": {
+			"src_container": {
+				"type": "string",
+				"defaultValue": "source-files"
+			},
+			"src_folder": {
+				"type": "string",
+				"defaultValue": "spl"
+			},
+			"tgt_container": {
+				"type": "string",
+				"defaultValue": "output"
+			},
+			"tgt_folder": {
+				"type": "string",
+				"defaultValue": "spl"
+			},
+			"file_prefix": {
+				"type": "string",
+				"defaultValue": "spl_fall2026"
+			},
 			"files_list": {
 				"type": "array",
 				"defaultValue": [
@@ -119,6 +209,9 @@
 		},
 		"variables": {
 			"v_file_name": {
+				"type": "String"
+			},
+			"v_file_date": {
 				"type": "String"
 			}
 		},

@@ -1,0 +1,15 @@
+{
+	"name": "adf-spl-ashfaqwhat",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "canadacentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "01247fe8-4c82-4983-8ec3-e029582e9263",
+		"tenantId": "a8eec281-aaa3-4dae-ac9b-9a398b9215e7"
+	}
+}

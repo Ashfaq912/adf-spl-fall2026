@@ -1,0 +1,211 @@
+{
+	"name": "spl_master_sql_pl",
+	"properties": {
+		"activities": [
+			{
+				"name": "truncate_table",
+				"type": "Script",
+				"dependsOn": [],
+				"policy": {
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "ls_sql",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "NonQuery",
+							"text": {
+								"value": "@concat('TRUNCATE TABLE ', pipeline().parameters.tgt_schema, '.', pipeline().parameters.tgt_table)",
+								"type": "Expression"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Get Metadata1",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "truncate_table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_src_folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"container": {
+								"value": "@pipeline().parameters.src_container",
+								"type": "Expression"
+							},
+							"folder": {
+								"value": "@pipeline().parameters.src_folder",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "filter_csv",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata1').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@endswith(item().name, '.csv')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach_files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "filter_csv",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('filter_csv').output.Value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "set_file_name",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_file_name",
+								"value": {
+									"value": "@item().name",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "run_child_sql",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "set_file_name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "source_to_sql_pl",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"src_container": {
+										"value": "@pipeline().parameters.src_container",
+										"type": "Expression"
+									},
+									"src_folder": {
+										"value": "@pipeline().parameters.src_folder",
+										"type": "Expression"
+									},
+									"src_file": {
+										"value": "@variables('v_file_name')",
+										"type": "Expression"
+									},
+									"tgt_schema": {
+										"value": "@pipeline().parameters.tgt_schema",
+										"type": "Expression"
+									},
+									"tgt_table": {
+										"value": "@pipeline().parameters.tgt_table",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"src_container": {
+				"type": "string",
+				"defaultValue": "source-files"
+			},
+			"src_folder": {
+				"type": "string",
+				"defaultValue": "spl"
+			},
+			"tgt_schema": {
+				"type": "string",
+				"defaultValue": "dbo"
+			},
+			"tgt_table": {
+				"type": "string",
+				"defaultValue": "seattle_pet_licenses"
+			}
+		},
+		"variables": {
+			"v_file_name": {
+				"type": "String"
+			}
+		},
+		"annotations": []
+	}
+}

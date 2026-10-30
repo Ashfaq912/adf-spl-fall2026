@@ -104,7 +104,21 @@
 				"inputs": [
 					{
 						"referenceName": "ds_csv_src",
-						"type": "DatasetReference"
+						"type": "DatasetReference",
+						"parameters": {
+							"container": {
+								"value": "@pipeline().parameters.src_container",
+								"type": "Expression"
+							},
+							"folder": {
+								"value": "@pipeline().parameters.src_folder",
+								"type": "Expression"
+							},
+							"file": {
+								"value": "@pipeline().parameters.src_file",
+								"type": "Expression"
+							}
+						}
 					}
 				],
 				"outputs": [
